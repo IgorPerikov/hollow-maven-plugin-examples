@@ -11,4 +11,29 @@
 
     <artifactId>single-module-example</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.netflix.hollow</groupId>
+            <artifactId>hollow</artifactId>
+            <version>2.6.3</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.igorperikov</groupId>
+                <artifactId>hollow-maven-plugin</artifactId>
+                <version>0.3.0</version>
+                <configuration>
+                    <packagesToScan>
+                        <param>com.github.igorperikov.examples.single.data</param>
+                    </packagesToScan>
+                    <apiClassName>EntityApi</apiClassName>
+                    <apiPackageName>com.github.igorperikov.examples.single.api</apiPackageName>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
 </project>
