@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>multi-module-example</artifactId>
+        <groupId>com.github.igorperikov.examples</groupId>
+        <version>0.1</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>consumer-api</artifactId>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.github.igorperikov.examples</groupId>
+            <artifactId>data-model</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.netflix.hollow</groupId>
+            <artifactId>hollow</artifactId>
+            <version>2.6.3</version>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.github.igorperikov</groupId>
+                <artifactId>hollow-maven-plugin</artifactId>
+                <version>0.3.0</version>
+
+                <executions>
+                    <execution>
+                        <id>generate-hollow-consumer-api</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>generate-as-target-sources</goal>
+                        </goals>
+                        <configuration>
+                            <packagesToScan>
+                                <param>com.github.igorperikov.examples.datamodel</param>
+                            </packagesToScan>
+                            <apiClassName>EntityApi</apiClassName>
+                            <apiPackageName>com.github.igorperikov.examples.multi.api</apiPackageName>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>
