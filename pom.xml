@@ -13,4 +13,9 @@
         <module>multi-module-example</module>
     </modules>
 
+    <properties>
+        <hollow.version>4.0.3</hollow.version>
+        <hollow.plugin.version>1.0.0</hollow.plugin.version>
+    </properties>
+
 </project>

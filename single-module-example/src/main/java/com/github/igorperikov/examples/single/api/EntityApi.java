@@ -1,31 +1,31 @@
 package com.github.igorperikov.examples.single.api;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
-import java.util.Map;
+import com.github.igorperikov.examples.single.api.collections.ListOfLong;
+import com.github.igorperikov.examples.single.api.collections.SetOfOtherEntity;
+import com.github.igorperikov.examples.single.api.core.*;
+import com.netflix.hollow.api.consumer.HollowConsumerAPI;
 import com.netflix.hollow.api.custom.HollowAPI;
-import com.netflix.hollow.core.read.dataaccess.HollowDataAccess;
-import com.netflix.hollow.core.read.dataaccess.HollowTypeDataAccess;
-import com.netflix.hollow.core.read.dataaccess.HollowObjectTypeDataAccess;
-import com.netflix.hollow.core.read.dataaccess.HollowListTypeDataAccess;
-import com.netflix.hollow.core.read.dataaccess.HollowSetTypeDataAccess;
-import com.netflix.hollow.core.read.dataaccess.HollowMapTypeDataAccess;
-import com.netflix.hollow.core.read.dataaccess.missing.HollowObjectMissingDataAccess;
-import com.netflix.hollow.core.read.dataaccess.missing.HollowListMissingDataAccess;
-import com.netflix.hollow.core.read.dataaccess.missing.HollowSetMissingDataAccess;
-import com.netflix.hollow.core.read.dataaccess.missing.HollowMapMissingDataAccess;
 import com.netflix.hollow.api.objects.provider.HollowFactory;
-import com.netflix.hollow.api.objects.provider.HollowObjectProvider;
 import com.netflix.hollow.api.objects.provider.HollowObjectCacheProvider;
 import com.netflix.hollow.api.objects.provider.HollowObjectFactoryProvider;
+import com.netflix.hollow.api.objects.provider.HollowObjectProvider;
 import com.netflix.hollow.api.sampling.HollowObjectCreationSampler;
 import com.netflix.hollow.api.sampling.HollowSamplingDirector;
 import com.netflix.hollow.api.sampling.SampleResult;
+import com.netflix.hollow.core.read.dataaccess.*;
+import com.netflix.hollow.core.read.dataaccess.missing.HollowListMissingDataAccess;
+import com.netflix.hollow.core.read.dataaccess.missing.HollowObjectMissingDataAccess;
+import com.netflix.hollow.core.read.dataaccess.missing.HollowSetMissingDataAccess;
+import com.netflix.hollow.core.type.*;
 import com.netflix.hollow.core.util.AllHollowRecordCollection;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
+
 @SuppressWarnings("all")
-public class EntityApi extends HollowAPI {
+public class EntityApi extends HollowAPI implements HollowConsumerAPI.IntegerRetriever, HollowConsumerAPI.LongRetriever, HollowConsumerAPI.StringRetriever {
 
     private final HollowObjectCreationSampler objectCreationSampler;
 
@@ -33,12 +33,16 @@ public class EntityApi extends HollowAPI {
     private final LongTypeAPI longTypeAPI;
     private final ListOfLongTypeAPI listOfLongTypeAPI;
     private final StringTypeAPI stringTypeAPI;
+    private final OtherEntityTypeAPI otherEntityTypeAPI;
+    private final SetOfOtherEntityTypeAPI setOfOtherEntityTypeAPI;
     private final EntityTypeAPI entityTypeAPI;
 
     private final HollowObjectProvider integerProvider;
     private final HollowObjectProvider longProvider;
     private final HollowObjectProvider listOfLongProvider;
     private final HollowObjectProvider stringProvider;
+    private final HollowObjectProvider otherEntityProvider;
+    private final HollowObjectProvider setOfOtherEntityProvider;
     private final HollowObjectProvider entityProvider;
 
     public EntityApi(HollowDataAccess dataAccess) {
@@ -58,7 +62,7 @@ public class EntityApi extends HollowAPI {
         HollowTypeDataAccess typeDataAccess;
         HollowFactory factory;
 
-        objectCreationSampler = new HollowObjectCreationSampler("Integer","Long","ListOfLong","String","Entity");
+        objectCreationSampler = new HollowObjectCreationSampler("Integer", "Long", "ListOfLong", "String", "OtherEntity", "SetOfOtherEntity", "Entity");
 
         typeDataAccess = dataAccess.getTypeDataAccess("Integer");
         if(typeDataAccess != null) {
@@ -136,6 +140,44 @@ public class EntityApi extends HollowAPI {
             stringProvider = new HollowObjectFactoryProvider(typeDataAccess, stringTypeAPI, factory);
         }
 
+        typeDataAccess = dataAccess.getTypeDataAccess("OtherEntity");
+        if (typeDataAccess != null) {
+            otherEntityTypeAPI = new OtherEntityTypeAPI(this, (HollowObjectTypeDataAccess) typeDataAccess);
+        } else {
+            otherEntityTypeAPI = new OtherEntityTypeAPI(this, new HollowObjectMissingDataAccess(dataAccess, "OtherEntity"));
+        }
+        addTypeAPI(otherEntityTypeAPI);
+        factory = factoryOverrides.get("OtherEntity");
+        if (factory == null)
+            factory = new OtherEntityHollowFactory();
+        if (cachedTypes.contains("OtherEntity")) {
+            HollowObjectCacheProvider previousCacheProvider = null;
+            if (previousCycleAPI != null && (previousCycleAPI.otherEntityProvider instanceof HollowObjectCacheProvider))
+                previousCacheProvider = (HollowObjectCacheProvider) previousCycleAPI.otherEntityProvider;
+            otherEntityProvider = new HollowObjectCacheProvider(typeDataAccess, otherEntityTypeAPI, factory, previousCacheProvider);
+        } else {
+            otherEntityProvider = new HollowObjectFactoryProvider(typeDataAccess, otherEntityTypeAPI, factory);
+        }
+
+        typeDataAccess = dataAccess.getTypeDataAccess("SetOfOtherEntity");
+        if (typeDataAccess != null) {
+            setOfOtherEntityTypeAPI = new SetOfOtherEntityTypeAPI(this, (HollowSetTypeDataAccess) typeDataAccess);
+        } else {
+            setOfOtherEntityTypeAPI = new SetOfOtherEntityTypeAPI(this, new HollowSetMissingDataAccess(dataAccess, "SetOfOtherEntity"));
+        }
+        addTypeAPI(setOfOtherEntityTypeAPI);
+        factory = factoryOverrides.get("SetOfOtherEntity");
+        if (factory == null)
+            factory = new SetOfOtherEntityHollowFactory();
+        if (cachedTypes.contains("SetOfOtherEntity")) {
+            HollowObjectCacheProvider previousCacheProvider = null;
+            if (previousCycleAPI != null && (previousCycleAPI.setOfOtherEntityProvider instanceof HollowObjectCacheProvider))
+                previousCacheProvider = (HollowObjectCacheProvider) previousCycleAPI.setOfOtherEntityProvider;
+            setOfOtherEntityProvider = new HollowObjectCacheProvider(typeDataAccess, setOfOtherEntityTypeAPI, factory, previousCacheProvider);
+        } else {
+            setOfOtherEntityProvider = new HollowObjectFactoryProvider(typeDataAccess, setOfOtherEntityTypeAPI, factory);
+        }
+
         typeDataAccess = dataAccess.getTypeDataAccess("Entity");
         if(typeDataAccess != null) {
             entityTypeAPI = new EntityTypeAPI(this, (HollowObjectTypeDataAccess)typeDataAccess);
@@ -166,6 +208,10 @@ public class EntityApi extends HollowAPI {
             ((HollowObjectCacheProvider)listOfLongProvider).detach();
         if(stringProvider instanceof HollowObjectCacheProvider)
             ((HollowObjectCacheProvider)stringProvider).detach();
+        if (otherEntityProvider instanceof HollowObjectCacheProvider)
+            ((HollowObjectCacheProvider) otherEntityProvider).detach();
+        if (setOfOtherEntityProvider instanceof HollowObjectCacheProvider)
+            ((HollowObjectCacheProvider) setOfOtherEntityProvider).detach();
         if(entityProvider instanceof HollowObjectCacheProvider)
             ((HollowObjectCacheProvider)entityProvider).detach();
     }
@@ -182,63 +228,107 @@ public class EntityApi extends HollowAPI {
     public StringTypeAPI getStringTypeAPI() {
         return stringTypeAPI;
     }
+
+    public OtherEntityTypeAPI getOtherEntityTypeAPI() {
+        return otherEntityTypeAPI;
+    }
+
+    public SetOfOtherEntityTypeAPI getSetOfOtherEntityTypeAPI() {
+        return setOfOtherEntityTypeAPI;
+    }
     public EntityTypeAPI getEntityTypeAPI() {
         return entityTypeAPI;
     }
-    public Collection<IntegerHollow> getAllIntegerHollow() {
-        return new AllHollowRecordCollection<IntegerHollow>(getDataAccess().getTypeDataAccess("Integer").getTypeState()) {
-            protected IntegerHollow getForOrdinal(int ordinal) {
-                return getIntegerHollow(ordinal);
+
+    public Collection<HInteger> getAllHInteger() {
+        return new AllHollowRecordCollection<HInteger>(getDataAccess().getTypeDataAccess("Integer").getTypeState()) {
+            protected HInteger getForOrdinal(int ordinal) {
+                return getHInteger(ordinal);
             }
         };
     }
-    public IntegerHollow getIntegerHollow(int ordinal) {
+
+    public HInteger getHInteger(int ordinal) {
         objectCreationSampler.recordCreation(0);
-        return (IntegerHollow)integerProvider.getHollowObject(ordinal);
+        return (HInteger) integerProvider.getHollowObject(ordinal);
     }
-    public Collection<LongHollow> getAllLongHollow() {
-        return new AllHollowRecordCollection<LongHollow>(getDataAccess().getTypeDataAccess("Long").getTypeState()) {
-            protected LongHollow getForOrdinal(int ordinal) {
-                return getLongHollow(ordinal);
+
+    public Collection<HLong> getAllHLong() {
+        return new AllHollowRecordCollection<HLong>(getDataAccess().getTypeDataAccess("Long").getTypeState()) {
+            protected HLong getForOrdinal(int ordinal) {
+                return getHLong(ordinal);
             }
         };
     }
-    public LongHollow getLongHollow(int ordinal) {
+
+    public HLong getHLong(int ordinal) {
         objectCreationSampler.recordCreation(1);
-        return (LongHollow)longProvider.getHollowObject(ordinal);
+        return (HLong) longProvider.getHollowObject(ordinal);
     }
-    public Collection<ListOfLongHollow> getAllListOfLongHollow() {
-        return new AllHollowRecordCollection<ListOfLongHollow>(getDataAccess().getTypeDataAccess("ListOfLong").getTypeState()) {
-            protected ListOfLongHollow getForOrdinal(int ordinal) {
-                return getListOfLongHollow(ordinal);
+
+    public Collection<ListOfLong> getAllListOfLong() {
+        return new AllHollowRecordCollection<ListOfLong>(getDataAccess().getTypeDataAccess("ListOfLong").getTypeState()) {
+            protected ListOfLong getForOrdinal(int ordinal) {
+                return getListOfLong(ordinal);
             }
         };
     }
-    public ListOfLongHollow getListOfLongHollow(int ordinal) {
+
+    public ListOfLong getListOfLong(int ordinal) {
         objectCreationSampler.recordCreation(2);
-        return (ListOfLongHollow)listOfLongProvider.getHollowObject(ordinal);
+        return (ListOfLong) listOfLongProvider.getHollowObject(ordinal);
     }
-    public Collection<StringHollow> getAllStringHollow() {
-        return new AllHollowRecordCollection<StringHollow>(getDataAccess().getTypeDataAccess("String").getTypeState()) {
-            protected StringHollow getForOrdinal(int ordinal) {
-                return getStringHollow(ordinal);
+
+    public Collection<HString> getAllHString() {
+        return new AllHollowRecordCollection<HString>(getDataAccess().getTypeDataAccess("String").getTypeState()) {
+            protected HString getForOrdinal(int ordinal) {
+                return getHString(ordinal);
             }
         };
     }
-    public StringHollow getStringHollow(int ordinal) {
+
+    public HString getHString(int ordinal) {
         objectCreationSampler.recordCreation(3);
-        return (StringHollow)stringProvider.getHollowObject(ordinal);
+        return (HString) stringProvider.getHollowObject(ordinal);
     }
-    public Collection<EntityHollow> getAllEntityHollow() {
-        return new AllHollowRecordCollection<EntityHollow>(getDataAccess().getTypeDataAccess("Entity").getTypeState()) {
-            protected EntityHollow getForOrdinal(int ordinal) {
-                return getEntityHollow(ordinal);
+
+    public Collection<OtherEntity> getAllOtherEntity() {
+        return new AllHollowRecordCollection<OtherEntity>(getDataAccess().getTypeDataAccess("OtherEntity").getTypeState()) {
+            protected OtherEntity getForOrdinal(int ordinal) {
+                return getOtherEntity(ordinal);
             }
         };
     }
-    public EntityHollow getEntityHollow(int ordinal) {
+
+    public OtherEntity getOtherEntity(int ordinal) {
         objectCreationSampler.recordCreation(4);
-        return (EntityHollow)entityProvider.getHollowObject(ordinal);
+        return (OtherEntity) otherEntityProvider.getHollowObject(ordinal);
+    }
+
+    public Collection<SetOfOtherEntity> getAllSetOfOtherEntity() {
+        return new AllHollowRecordCollection<SetOfOtherEntity>(getDataAccess().getTypeDataAccess("SetOfOtherEntity").getTypeState()) {
+            protected SetOfOtherEntity getForOrdinal(int ordinal) {
+                return getSetOfOtherEntity(ordinal);
+            }
+        };
+    }
+
+    public SetOfOtherEntity getSetOfOtherEntity(int ordinal) {
+        objectCreationSampler.recordCreation(5);
+        return (SetOfOtherEntity) setOfOtherEntityProvider.getHollowObject(ordinal);
+    }
+
+    public Collection<Entity> getAllEntity() {
+        return new AllHollowRecordCollection<Entity>(getDataAccess().getTypeDataAccess("Entity").getTypeState()) {
+            protected Entity getForOrdinal(int ordinal) {
+                return getEntity(ordinal);
+            }
+        };
+    }
+
+    public Entity getEntity(int ordinal) {
+        objectCreationSampler.recordCreation(6);
+        return (Entity) entityProvider.getHollowObject(ordinal);
     }
     public void setSamplingDirector(HollowSamplingDirector director) {
         super.setSamplingDirector(director);

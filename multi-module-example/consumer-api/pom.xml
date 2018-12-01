@@ -20,7 +20,7 @@
         <dependency>
             <groupId>com.netflix.hollow</groupId>
             <artifactId>hollow</artifactId>
-            <version>2.6.3</version>
+            <version>${hollow.version}</version>
         </dependency>
     </dependencies>
 
@@ -29,7 +29,7 @@
             <plugin>
                 <groupId>com.github.igorperikov</groupId>
                 <artifactId>hollow-maven-plugin</artifactId>
-                <version>0.4.0</version>
+                <version>${hollow.plugin.version}</version>
 
                 <executions>
                     <execution>
